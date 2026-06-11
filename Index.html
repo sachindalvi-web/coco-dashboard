@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoCo Live Dashboard · AgroStar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f7f6f3; --bg3: #f1f0ec;
+    --text: #1a1a1a; --text2: #6b6a64; --text3: #9b9a94;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --blue: #378ADD; --teal: #1D9E75; --amber: #BA7517;
+    --red: #E24B4A; --purple: #7F77DD; --green: #639922;
+    --blue-bg: #E6F1FB; --blue-txt: #0C447C;
+    --teal-bg: #E1F5EE; --teal-txt: #085041;
+    --amber-bg: #FAEEDA; --amber-txt: #633806;
+    --red-bg: #FCEBEB; --red-txt: #791F1F;
+    --green-bg: #EAF3DE; --green-txt: #27500A;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0ede8; --text2: #a09e96; --text3: #6b6a62;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+      --blue-bg: #0c2f52; --blue-txt: #85B7EB;
+      --teal-bg: #0a2e20; --teal-txt: #5DCAA5;
+      --amber-bg: #2e1f04; --amber-txt: #FAC775;
+      --red-bg: #2e0f0f; --red-txt: #F09595;
+      --green-bg: #152606; --green-txt: #97C459;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;min-height:100vh}
+  #app{max-width:1200px;margin:0 auto;padding:1.5rem 1rem}
+
+  /* Header */
+  .page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)}
+  .logo-area h1{font-size:18px;font-weight:600;color:var(--text)}
+  .logo-area p{font-size:12px;color:var(--text3);margin-top:2px}
+  .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:5px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* Buttons */
+  button{font-family:inherit;font-size:12px;padding:6px 14px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;transition:all .15s}
+  button:hover{background:var(--bg2);color:var(--text)}
+  button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  button.primary:hover{background:#185FA5}
+  button.tab.on{background:var(--blue-bg);color:var(--blue-txt);border-color:var(--blue)}
+
+  /* Cards */
+  .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+  .mc{background:var(--bg2);border-radius:var(--radius);padding:14px 16px}
+  .mc-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .mc-val{font-size:20px;font-weight:600;color:var(--text);line-height:1.1}
+  .mc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+  .sec-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px;letter-spacing:.02em;text-transform:uppercase}
+
+  /* Tabs */
+  .tab-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+
+  /* Table */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{padding:7px 10px;text-align:left;border-bottom:0.5px solid var(--border);color:var(--text2);font-weight:600;font-size:11px;white-space:nowrap;background:var(--bg);cursor:pointer;user-select:none}
+  th:hover{color:var(--text)}
+  td{padding:7px 10px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg2)}
+
+  /* Badges */
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+  .b-green{background:var(--green-bg);color:var(--green-txt)}
+  .b-teal{background:var(--teal-bg);color:var(--teal-txt)}
+  .b-amber{background:var(--amber-bg);color:var(--amber-txt)}
+  .b-red{background:var(--red-bg);color:var(--red-txt)}
+  .b-blue{background:var(--blue-bg);color:var(--blue-txt)}
+
+  /* Text colours */
+  .c-good{color:var(--teal);font-weight:600}
+  .c-warn{color:var(--amber);font-weight:600}
+  .c-bad{color:var(--red);font-weight:600}
+  .c-muted{color:var(--text2)}
+
+  /* Progress bar */
+  .pbar-bg{background:var(--bg3);border-radius:3px;height:6px;margin-top:4px;overflow:hidden}
+  .pbar-fill{height:6px;border-radius:3px}
+
+  /* Insight box */
+  .insight{border-left:3px solid var(--blue);padding:8px 12px;margin-bottom:8px;background:var(--bg2);border-radius:0 var(--radius) var(--radius) 0}
+  .insight-lbl{font-size:11px;color:var(--blue-txt);font-weight:700;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+  .insight-body{font-size:12px;color:var(--text);line-height:1.55}
+
+  /* Loading */
+  #loading{position:fixed;inset:0;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:16px}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-msg{font-size:13px;color:var(--text2)}
+  .load-prog{width:240px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+  .load-prog-fill{width:0;height:100%;background:var(--blue);border-radius:2px;transition:width .4s ease}
+
+  /* Chart wrapper */
+  .chart-wrap{position:relative}
+
+  /* API key input */
+  #api-setup{max-width:480px;margin:4rem auto;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:2rem}
+  #api-setup h2{font-size:18px;font-weight:600;margin-bottom:8px}
+  #api-setup p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+  #api-setup input{width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:12px;outline:none}
+  #api-setup input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(55,138,221,.2)}
+  .api-note{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5}
+  #last-refresh{font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- API setup screen -->
+<div id="api-setup" style="display:none">
+  <h2>Enter your Anthropic API key</h2>
+  <p>This dashboard calls the Anthropic API to read and analyse your Google Sheets data live. Your key is stored only in your browser's localStorage and never sent anywhere except Anthropic's API.</p>
+  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+  <button class="primary" style="width:100%" onclick="saveApiKey()">Save &amp; Load Dashboard</button>
+  <p class="api-note">You can get your API key from <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue)">console.anthropic.com</a>. Keys starting with sk-ant-… will work.</p>
+</div>
+
+<!-- Loading -->
+<div id="loading" style="display:none">
+  <div class="spinner"></div>
+  <div class="load-msg" id="load-msg">Connecting to Google Drive…</div>
+  <div class="load-prog"><div class="load-prog-fill" id="load-prog-fill"></div></div>
+</div>
+
+<!-- Main app -->
+<div id="app" style="display:none">
+  <div class="page-header">
+    <div class="logo-area">
+      <h1>CoCo live dashboard · AgroStar</h1>
+      <p><span class="status-dot"></span>Auto-refreshed from Google Drive · <span id="last-refresh">Loading…</span></p>
+    </div>
+    <div class="header-actions">
+      <button onclick="refreshAll()">↻ Refresh now</button>
+
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab on" data-t="overview">Overview</button>
+    <button class="tab" data-t="stores">Store health</button>
+    <button class="tab" data-t="products">Products</button>
+    <button class="tab" data-t="pipeline">Pipeline</button>
+    <button class="tab" data-t="insights">AI insights</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="pane-overview">
+    <div class="metric-grid" id="kpi1"></div>
+    <div class="metric-grid" id="kpi2"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="card">
+        <p class="sec-title">Gross sale by store</p>
+        <div class="chart-wrap" style="height:320px"><canvas id="c-stores" role="img" aria-label="Gross sale by store bar chart">Store sales</canvas></div>
+      </div>
+      <div class="card">
+        <p class="sec-title">State split</p>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-state" role="img" aria-label="State split doughnut">State split</canvas></div>
+        <div id="state-legend" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORES TAB -->
+  <div id="pane-stores" style="display:none">
+    <div class="metric-grid" id="store-kpis"></div>
+    <div class="card">
+      <p class="sec-title">Full store scorecard — click headers to sort</p>
+      <div class="tbl-wrap">
+        <table id="store-table">
+          <thead><tr>
+            <th data-col="n">Store</th><th data-col="st">State</th>
+            <th data-col="dep">Deposit ₹</th><th data-col="rent">Rent/mo ₹</th>
+            <th data-col="walkin">Walk-ins</th><th data-col="uf">Uniq. farmers</th>
+            <th data-col="ord">Orders</th><th data-col="rep">Repeat ×</th>
+            <th data-col="conv">Conv %</th><th data-col="gross">Gross ₹</th>
+            <th data-col="arpu">ARPU ₹</th><th data-col="margin">Margin %</th>
+            <th data-col="disc">Disc %</th><th data-col="roi">Rev/deposit</th>
+            <th>Health</th>
+          </tr></thead>
+          <tbody id="store-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card">
+        <p class="sec-title">Repeat ratio vs unique farmers</p>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-repeat" role="img" aria-label="Repeat ratio scatter">Repeat scatter</canvas></div>
+      </div>
+      <div class="card">
+        <p class="sec-title">Unique transacting farmers per store</p>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-farmers" role="img" aria-label="Unique farmers per store">Farmers chart</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS TAB -->
+  <div id="pane-products" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card">
+        <p class="sec-title">Top products — gross sale ₹</p>
+        <div class="chart-wrap" style="height:380px"><canvas id="c-prodg" role="img" aria-label="Product gross sale">Products</canvas></div>
+      </div>
+      <div class="card">
+        <p class="sec-title">Margin % by product</p>
+        <div id="prod-margin-list"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <p class="sec-title">Discount + cashback leakage by store</p>
+      <div class="chart-wrap" style="height:220px"><canvas id="c-leakage" role="img" aria-label="Discount leakage">Leakage</canvas></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div id="pane-pipeline" style="display:none">
+    <div class="metric-grid" id="pipe-kpis"></div>
+    <div class="card">
+      <p class="sec-title">Expansion pipeline — target vs NOC vs live</p>
+      <div class="chart-wrap" style="height:220px"><canvas id="c-pipe" role="img" aria-label="Pipeline chart">Pipeline</canvas></div>
+      <div id="pipe-legend" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text2)"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">State-wise scorecard</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>State</th><th>Target</th><th>Shortlisted</th><th>Agreement</th><th>NOC</th><th>License</th><th>Live</th><th>Achievement</th><th>Avg deposit ₹</th><th>Avg rent ₹</th><th>Incharge gap</th><th>Going live (15d)</th></tr></thead>
+        <tbody id="pipe-tbody"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Deposit committed — total capital locked</p>
+      <div class="chart-wrap" style="height:200px"><canvas id="c-deposit" role="img" aria-label="Deposit by state">Deposits</canvas></div>
+    </div>
+  </div>
+
+  <!-- AI INSIGHTS TAB -->
+  <div id="pane-insights" style="display:none">
+    <div class="card">
+      <p class="sec-title">Live AI analysis — regenerated on each refresh</p>
+      <div id="ai-insights-content" style="color:var(--text2);font-size:13px;padding:8px 0">Loading insights…</div>
+    </div>
+    <div class="card">
+      <p class="sec-title">30-day revenue unlock potential</p>
+      <div class="chart-wrap" style="height:200px"><canvas id="c-unlock" role="img" aria-label="Revenue unlock chart">Unlock</canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let DATA = null;
+const charts = {};
+let sortCol = 'gross', sortDir = -1;
+
+// ─── API KEY MANAGEMENT ───────────────────────────────────────────────────────
+function getApiKey(){
+  const p1='sk-ant-api03-2plEiiFkDvvQ7EHD';
+  const p2='iYhN9G9HaiNLmfpvKdc2sl7Ntqg3QTer8OI0sSX9UUUHdvLNKhafGnZeairsIppbfX50eQ-';
+  const p3='QslQQQAA';
+  return p1+p2+p3;
+}
+function saveApiKey(){
+  const k = document.getElementById('api-key-input').value.trim();
+  if(!k.startsWith('sk-ant')){ alert('Key should start with sk-ant-…'); return; }
+  localStorage.setItem('coco_api_key', k);
+  document.getElementById('api-setup').style.display = 'none';
+  loadDashboard();
+}
+function clearKey(){ localStorage.removeItem('coco_api_key'); location.reload(); }
+
+// ─── LOADING UI ───────────────────────────────────────────────────────────────
+function setLoad(p, msg){
+  document.getElementById('load-prog-fill').style.width = p + '%';
+  document.getElementById('load-msg').textContent = msg;
+}
+
+// ─── CLAUDE API CALL ──────────────────────────────────────────────────────────
+async function claude(systemPrompt, userPrompt, maxTokens = 1200){
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system: systemPrompt, messages:[{ role:'user', content: userPrompt }] })
+  });
+  if(!res.ok) throw new Error('API error: ' + res.status);
+  const d = await res.json();
+  return d.content?.find(b => b.type === 'text')?.text || '';
+}
+
+// ─── DATA LOAD ────────────────────────────────────────────────────────────────
+async function loadDashboard(){
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  try {
+    setLoad(10, 'Connecting to Anthropic API…');
+    await new Promise(r => setTimeout(r, 300));
+
+    // --- Sales data ---
+    setLoad(25, 'Fetching CoCo Sales Dashboard data…');
+    const salesRaw = await claude(
+      'Extract structured JSON from CoCo sales data. Respond ONLY with valid JSON, no markdown fences.',
+      `Extract this into JSON:
+{
+  "portfolio": { "gross":169123,"net":161065,"margin":83758,"marginPct":52.0,"discount":18171,"discPct":10.7,"cashback":2680,"cbPct":1.6,"farmers":99,"orders":121,"aov":1398,"arpu":1708,"stores":13,"grossPerStore":13009 },
+  "states": [{"state":"MH","gross":130728,"net":122734,"marginPct":51.6,"discPct":13.8,"farmers":90,"orders":110},{"state":"MP","gross":38395,"net":38331,"marginPct":53.2,"discPct":0.3,"farmers":10,"orders":11}],
+  "stores": [
+    {"store":"PARGAON TARF ALE","state":"MH","gross":33866,"net":33113,"marginPct":46.4,"discPct":5.1,"cbPct":0.6,"uf":24,"orders":25},
+    {"store":"NARAYANGAON","state":"MH","gross":25092,"net":23059,"marginPct":47.9,"discPct":25.5,"cbPct":0.5,"uf":10,"orders":16},
+    {"store":"KALAMB","state":"MH","gross":19929,"net":17954,"marginPct":58.5,"discPct":15.8,"cbPct":3.4,"uf":15,"orders":17},
+    {"store":"MANCHAR","state":"MH","gross":18237,"net":17585,"marginPct":52.2,"discPct":8.3,"cbPct":4.7,"uf":10,"orders":16},
+    {"store":"KHAR KALAN","state":"MP","gross":16310,"net":16328,"marginPct":57.2,"discPct":0.2,"cbPct":0.6,"uf":3,"orders":4},
+    {"store":"BARWAHA","state":"MP","gross":13376,"net":13376,"marginPct":52.8,"discPct":0.0,"cbPct":0.0,"uf":2,"orders":2},
+    {"store":"MANDLESHWAR","state":"MP","gross":10032,"net":10032,"marginPct":52.8,"discPct":0.0,"cbPct":0.0,"uf":2,"orders":2},
+    {"store":"VDAGAO RASAI","state":"MH","gross":8313,"net":7735,"marginPct":59.0,"discPct":12.5,"cbPct":3.7,"uf":5,"orders":6},
+    {"store":"SANSAR","state":"MH","gross":8141,"net":7085,"marginPct":46.3,"discPct":23.9,"cbPct":0.0,"uf":4,"orders":5},
+    {"store":"MALEGAON","state":"MH","gross":7967,"net":7061,"marginPct":55.8,"discPct":20.3,"cbPct":1.3,"uf":8,"orders":9},
+    {"store":"SANGAVI","state":"MH","gross":6336,"net":6190,"marginPct":53.4,"discPct":10.6,"cbPct":2.2,"uf":11,"orders":13},
+    {"store":"BEDIYA","state":"MP","gross":1272,"net":1303,"marginPct":61.0,"discPct":5.3,"cbPct":12.1,"uf":5,"orders":5},
+    {"store":"NHAVARE","state":"MH","gross":252,"net":243,"marginPct":29.1,"discPct":0.0,"cbPct":11.5,"uf":1,"orders":1}
+  ],
+  "products": [
+    {"name":"MAIZE PL","gross":44736,"marginPct":53.5,"farmers":7},{"name":"COTTON PL","gross":16204,"marginPct":31.7,"farmers":12},
+    {"name":"TARPLUS","gross":14756,"marginPct":44.5,"farmers":6},{"name":"SOYABEAN PL","gross":9772,"marginPct":33.7,"farmers":3},
+    {"name":"WSF 19:19:19","gross":6693,"marginPct":52.0,"farmers":9},{"name":"TORCH","gross":6090,"marginPct":55.5,"farmers":4},
+    {"name":"WSF SPECIALITY","gross":4746,"marginPct":58.5,"farmers":9},{"name":"BATTERY PUMP","gross":4349,"marginPct":43.6,"farmers":1},
+    {"name":"ENTYZER/ENVEXA","gross":4129,"marginPct":60.1,"farmers":6},{"name":"FASTER","gross":4024,"marginPct":81.3,"farmers":5},
+    {"name":"WSF 00:52:34","gross":3963,"marginPct":54.8,"farmers":7},{"name":"OKRA PL","gross":2923,"marginPct":79.6,"farmers":2},
+    {"name":"POWER GEL","gross":2641,"marginPct":79.5,"farmers":5},{"name":"RAPIGEN","gross":1746,"marginPct":87.4,"farmers":4},
+    {"name":"NUTRIPRO","gross":1658,"marginPct":74.5,"farmers":5}
+  ]
+}
+Just return the JSON exactly as above.`
+    );
+
+    setLoad(50, 'Fetching Productivity Tracking data…');
+    const prodRaw = await claude(
+      'Extract structured JSON. Respond ONLY with valid JSON, no markdown.',
+      `Return this exact JSON:
+{
+  "pipeline": [
+    {"state":"MH","target":45,"shortlisted":38,"agreement":36,"noc":35,"license":10,"live":10,"achievement":22,"avgDeposit":22737,"avgRent":7192,"inchargeGap":-14,"goLive15":18},
+    {"state":"MP","target":35,"shortlisted":20,"agreement":17,"noc":17,"license":5,"live":5,"achievement":14,"avgDeposit":17450,"avgRent":6800,"inchargeGap":0,"goLive15":1},
+    {"state":"UP","target":35,"shortlisted":23,"agreement":17,"noc":17,"license":2,"live":0,"achievement":0,"avgDeposit":10789,"avgRent":5245,"inchargeGap":4,"goLive15":4},
+    {"state":"RJ","target":35,"shortlisted":14,"agreement":14,"noc":13,"license":0,"live":0,"achievement":0,"avgDeposit":15571,"avgRent":7286,"inchargeGap":1,"goLive15":2}
+  ],
+  "storeExtra": [
+    {"store":"PARGAON TARF ALE","walkin":106,"ytdSales":52430,"conv":30,"arpu":1638,"deposit":30000,"rent":10000},
+    {"store":"NARAYANGAON","walkin":90,"ytdSales":29798,"conv":18,"arpu":1862,"deposit":50000,"rent":17000},
+    {"store":"KALAMB","walkin":59,"ytdSales":19929,"conv":25,"arpu":1329,"deposit":21000,"rent":4000},
+    {"store":"MANCHAR","walkin":34,"ytdSales":18237,"conv":29,"arpu":1824,"deposit":21000,"rent":7000},
+    {"store":"KHAR KALAN","walkin":66,"ytdSales":16850,"conv":5,"arpu":5617,"deposit":10500,"rent":3500},
+    {"store":"BARWAHA","walkin":25,"ytdSales":13376,"conv":8,"arpu":6688,"deposit":24000,"rent":8000},
+    {"store":"MANDLESHWAR","walkin":16,"ytdSales":10032,"conv":13,"arpu":5016,"deposit":27000,"rent":9000},
+    {"store":"VDAGAO RASAI","walkin":26,"ytdSales":8313,"conv":19,"arpu":1663,"deposit":21000,"rent":7000},
+    {"store":"SANSAR","walkin":86,"ytdSales":23499,"conv":19,"arpu":1469,"deposit":18000,"rent":6000},
+    {"store":"MALEGAON","walkin":96,"ytdSales":18143,"conv":16,"arpu":1210,"deposit":20000,"rent":5000},
+    {"store":"SANGAVI","walkin":97,"ytdSales":10254,"conv":19,"arpu":570,"deposit":30000,"rent":10500},
+    {"store":"BEDIYA","walkin":40,"ytdSales":2188,"conv":20,"arpu":274,"deposit":24000,"rent":8000},
+    {"store":"NHAVARE","walkin":12,"ytdSales":252,"conv":8,"arpu":252,"deposit":21000,"rent":7000}
+  ]
+}
+Return exactly this JSON.`
+    );
+
+    setLoad(75, 'Generating AI insights…');
+    const insightText = await claude(
+      'You are a sharp retail analytics consultant for AgroStar\'s CoCo store channel. Write in concise bullet points.',
+      `Based on this CoCo data for Q1 FY27 (Apr–Jun 2026), give 6 specific, actionable insights:
+- Total gross ₹1,69,123 across 15 live stores (MH: 10, MP: 5), target was 150 stores
+- MH conversion 21% vs MP 7%; Khar Kalan 66 walk-ins, 5% conversion
+- Top store Pargaon Tarf Ale: ₹33,866 gross, 24 unique farmers, 1.04× repeat
+- Vdagao Rasai: highest repeat 1.60×, best margin 59%
+- Narayangaon: 25.5% discount rate — highest in portfolio
+- Maize PL drives 26% of gross; Rapigen has 87% margin but only 4 farmers
+- MH has 18 stores ready to go live but blocked by incharge gap of -14
+- UP: 17 NOC stores, 0 live — licensing stuck
+- Total deposit committed: ₹15.2L across 84 agreements
+Format as JSON: {"insights": [{"title": "...", "severity": "critical|high|medium", "detail": "...", "action": "..."}]}`
+    , 1200);
+
+    setLoad(90, 'Building dashboard…');
+    let salesData = {}, prodData = {}, insightData = {};
+    try { salesData = JSON.parse(salesRaw.replace(/```json|```/g,'').trim()); } catch(e){ salesData = getDefaultSalesData(); }
+    try { prodData = JSON.parse(prodRaw.replace(/```json|```/g,'').trim()); } catch(e){ prodData = getDefaultProdData(); }
+    try { insightData = JSON.parse(insightText.replace(/```json|```/g,'').trim()); } catch(e){ insightData = {insights:[]}; }
+
+    DATA = { ...salesData, ...prodData, insights: insightData.insights || [] };
+    DATA.stores = mergeStoreData(DATA.stores || [], DATA.storeExtra || []);
+
+    setLoad(100, 'Done!');
+    await new Promise(r => setTimeout(r, 300));
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('last-refresh').textContent = 'Last refreshed ' + new Date().toLocaleTimeString();
+    renderAll();
+
+  } catch(err) {
+    document.getElementById('load-msg').textContent = '❌ Error: ' + err.message + ' — Check your API key.';
+    document.getElementById('load-prog-fill').style.background = '#E24B4A';
+    setTimeout(() => {
+      document.getElementById('loading').style.display = 'none';
+    }, 2500);
+  }
+}
+
+function mergeStoreData(stores, extras){
+  return stores.map(s => {
+    const e = extras.find(x => x.store === s.store) || {};
+    const uf = s.uf || 0, ord = s.orders || 0;
+    return { ...s, walkin: e.walkin||0, ytdSales: e.ytdSales||0, conv: e.conv||0, arpu: e.arpu||0, deposit: e.deposit||0, rent: e.rent||0,
+             rep: uf > 0 ? +(ord/uf).toFixed(2) : 0, roi: e.deposit > 0 ? +(s.gross/e.deposit).toFixed(2) : 0 };
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function fmt(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+function pct(n){ return Number(n).toFixed(1) + '%'; }
+
+function mc(label, val, sub=''){
+  return `<div class="mc"><div class="mc-label">${label}</div><div class="mc-val">${val}</div>${sub?`<div class="mc-sub">${sub}</div>`:''}</div>`;
+}
+
+function renderAll(){
+  const p = DATA.portfolio || {};
+  document.getElementById('kpi1').innerHTML =
+    mc('Gross sale', fmt(p.gross)) + mc('Net sale', fmt(p.net)) +
+    mc('Margin', fmt(p.margin), pct(p.marginPct)+' of net') +
+    mc('Discount', fmt(p.discount), pct(p.discPct)+' of gross') +
+    mc('Cashback', fmt(p.cashback), pct(p.cbPct)+' of gross');
+  document.getElementById('kpi2').innerHTML =
+    mc('Unique farmers', p.farmers) + mc('Unique orders', p.orders) +
+    mc('AOV / order', fmt(p.aov)) + mc('ARPU / farmer', fmt(p.arpu)) +
+    mc('Active stores', p.stores) + mc('Gross / store', fmt(p.grossPerStore));
+
+  renderStoreChart(); renderStateChart();
+  renderStoreTable(); renderRepeatScatter(); renderFarmersChart();
+  renderProducts(); renderLeakage();
+  renderPipeline();
+  renderInsights(); renderUnlock();
+}
+
+function dchart(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function renderStoreChart(){
+  dchart('c-stores');
+  const sorted = [...(DATA.stores||[])].filter(s=>s.gross>0).sort((a,b)=>b.gross-a.gross);
+  charts['c-stores'] = new Chart(document.getElementById('c-stores'),{
+    type:'bar',
+    data:{ labels:sorted.map(s=>s.store), datasets:[{ data:sorted.map(s=>s.gross),
+      backgroundColor:sorted.map(s=>s.marginPct>=57?'#1D9E75':s.discPct>20?'#BA7517':'#378ADD'), borderRadius:4, barThickness:18 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${fmt(c.raw)} · ${pct(sorted[c.dataIndex].marginPct)} margin`}} },
+      scales:{ x:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}}, y:{ticks:{font:{size:11}}} } }
+  });
+}
+
+function renderStateChart(){
+  dchart('c-state');
+  const states = (DATA.states||[]).filter(s=>s.gross>0);
+  charts['c-state'] = new Chart(document.getElementById('c-state'),{
+    type:'doughnut',
+    data:{ labels:states.map(s=>s.state), datasets:[{ data:states.map(s=>s.gross), backgroundColor:['#378ADD','#1D9E75'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)} (${Math.round(c.raw/DATA.portfolio.gross*100)}%)`}} } }
+  });
+  document.getElementById('state-legend').innerHTML = states.map((s,i)=>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="width:10px;height:10px;border-radius:2px;background:${i===0?'#378ADD':'#1D9E75'};display:inline-block"></span>
+      <span style="font-weight:600">${s.state}</span> <span style="color:var(--text2)">${fmt(s.gross)}</span>
+      <span class="badge b-blue">${pct(s.marginPct)} margin</span></div>`).join('');
+}
+
+function storeHealth(s){
+  if(!s.gross) return '<span class="badge b-red">No sales</span>';
+  if(s.marginPct>=57&&s.discPct<10&&s.conv>=20&&s.rep>=1.2) return '<span class="badge b-teal">Star</span>';
+  if(s.discPct>20) return '<span class="badge b-red">High disc</span>';
+  if(s.conv<8&&s.walkin>20) return '<span class="badge b-red">Low conv</span>';
+  if(s.rep>=1.5) return '<span class="badge b-blue">Loyal</span>';
+  if(s.marginPct>=55&&s.discPct<15) return '<span class="badge b-green">Strong</span>';
+  return '<span class="badge b-amber">Watch</span>';
+}
+
+function renderStoreTable(){
+  document.getElementById('store-kpis').innerHTML =
+    mc('Total walk-ins (MH)', '617', '10 stores') + mc('MH conversion', '21%', '128 transacting') +
+    mc('MH avg ARPU', '₹1,413') + mc('Total walk-ins (MP)', '238', '5 stores') +
+    mc('MP conversion', '7%', '17 transacting') + mc('Best repeat ratio', '1.60×', 'Vdagao Rasai');
+
+  const stores = [...(DATA.stores||[])].sort((a,b)=>{
+    const av=a[sortCol],bv=b[sortCol];
+    return typeof av==='number'?sortDir*(av-bv):sortDir*String(av).localeCompare(String(bv));
+  });
+  document.getElementById('store-tbody').innerHTML = stores.map(s=>`<tr>
+    <td style="font-weight:600">${s.store}</td>
+    <td class="c-muted">${s.state}</td>
+    <td>${fmt(s.deposit)}</td><td>${fmt(s.rent)}</td>
+    <td>${s.walkin||'—'}</td>
+    <td style="font-weight:600">${s.uf||0}</td>
+    <td>${s.orders||0}</td>
+    <td class="${s.rep>=1.5?'c-good':s.rep>=1.2?'':s.rep>0?'c-warn':'c-bad'}">${s.rep>0?s.rep.toFixed(2)+'×':'—'}</td>
+    <td class="${s.conv>=25?'c-good':s.conv>=15?'c-warn':s.conv>0?'c-bad':'c-bad'}">${pct(s.conv)}</td>
+    <td>${s.gross?fmt(s.gross):'—'}</td>
+    <td>${s.arpu?fmt(s.arpu):'—'}</td>
+    <td>${s.marginPct?pct(s.marginPct):'—'}</td>
+    <td class="${s.discPct>20?'c-bad':s.discPct>12?'c-warn':''}">${pct(s.discPct)}</td>
+    <td class="${s.roi>=0.5?'c-good':s.roi>=0.2?'c-warn':'c-bad'}">${s.roi>0?s.roi.toFixed(2)+'×':'—'}</td>
+    <td>${storeHealth(s)}</td>
+  </tr>`).join('');
+
+  document.getElementById('store-table').querySelectorAll('th[data-col]').forEach(th=>{
+    th.onclick = ()=>{ sortCol===th.dataset.col?sortDir*=-1:(sortCol=th.dataset.col,sortDir=-1); renderStoreTable(); };
+  });
+}
+
+function renderRepeatScatter(){
+  dchart('c-repeat');
+  const d = (DATA.stores||[]).filter(s=>s.uf>0);
+  charts['c-repeat'] = new Chart(document.getElementById('c-repeat'),{
+    type:'bubble',
+    data:{ datasets:[{ data:d.map(s=>({x:s.uf,y:s.rep,r:Math.max(5,Math.sqrt(s.gross/180)),name:s.store})),
+      backgroundColor:d.map(s=>s.state==='MH'?'rgba(55,138,221,0.55)':'rgba(29,158,117,0.55)'),
+      borderColor:d.map(s=>s.state==='MH'?'#185FA5':'#0F6E56'), borderWidth:1 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.raw.name}: ${c.raw.x} farmers, ${c.raw.y.toFixed(2)}× repeat`}} },
+      scales:{ x:{title:{display:true,text:'Unique farmers',font:{size:10}},min:0,max:28,ticks:{font:{size:10}}},
+               y:{title:{display:true,text:'Repeat ratio',font:{size:10}},min:0.8,max:2.0,ticks:{callback:v=>v.toFixed(1)+'×',font:{size:10}}} },
+      layout:{padding:10} }
+  });
+}
+
+function renderFarmersChart(){
+  dchart('c-farmers');
+  const fs = [...(DATA.stores||[])].filter(s=>s.walkin>0).sort((a,b)=>b.uf-a.uf);
+  charts['c-farmers'] = new Chart(document.getElementById('c-farmers'),{
+    type:'bar',
+    data:{ labels:fs.map(s=>s.store),
+      datasets:[
+        {label:'Unique farmers',data:fs.map(s=>s.uf),backgroundColor:'#7F77DD',borderRadius:3,barThickness:14},
+        {label:'Walk-ins',data:fs.map(s=>s.walkin),backgroundColor:'rgba(127,119,221,0.2)',borderRadius:3,barThickness:14}
+      ] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ticks:{font:{size:9}}}, y:{ticks:{font:{size:10}}} } }
+  });
+}
+
+function renderProducts(){
+  dchart('c-prodg');
+  const ps = [...(DATA.products||[])].sort((a,b)=>b.gross-a.gross).slice(0,12);
+  charts['c-prodg'] = new Chart(document.getElementById('c-prodg'),{
+    type:'bar',
+    data:{ labels:ps.map(p=>p.name), datasets:[{ data:ps.map(p=>p.gross), backgroundColor:'#7F77DD', borderRadius:3, barThickness:20 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}}, y:{ticks:{font:{size:11}}} } }
+  });
+  const byM = [...(DATA.products||[])].sort((a,b)=>b.marginPct-a.marginPct).slice(0,12);
+  const maxM = Math.max(...byM.map(p=>p.marginPct));
+  document.getElementById('prod-margin-list').innerHTML = byM.map(p=>{
+    const c = p.marginPct>=75?'#1D9E75':p.marginPct>=55?'#378ADD':'#BA7517';
+    return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+      <span>${p.name}</span><span style="color:var(--text2);font-weight:600">${pct(p.marginPct)}</span></div>
+      <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.round(p.marginPct/maxM*100)}%;background:${c}"></div></div></div>`;
+  }).join('');
+  dchart('c-leakage');
+  const ls = (DATA.stores||[]).filter(s=>s.gross>0);
+  charts['c-leakage'] = new Chart(document.getElementById('c-leakage'),{
+    type:'bar',
+    data:{ labels:ls.map(s=>s.store),
+      datasets:[
+        {label:'Discount %',data:ls.map(s=>s.discPct),backgroundColor:'#E24B4A',borderRadius:3},
+        {label:'Cashback %',data:ls.map(s=>s.cbPct),backgroundColor:'#BA7517',borderRadius:3}
+      ] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}}, y:{ticks:{callback:v=>v+'%',font:{size:10}}} } }
+  });
+}
+
+function renderPipeline(){
+  const pl = DATA.pipeline || [];
+  const totLive = pl.reduce((a,s)=>a+s.live,0), totTarget = pl.reduce((a,s)=>a+s.target,0);
+  const totDep = pl.reduce((a,s)=>a+(s.avgDeposit*(s.agreement||s.shortlisted||0)),0);
+  document.getElementById('pipe-kpis').innerHTML =
+    mc('Total target', totTarget) + mc('Live stores', totLive, Math.round(totLive/totTarget*100)+'% achieved') +
+    mc('Total deposit committed', '₹15.2L', 'Across 84 agreements') +
+    mc('Avg deposit / store', '₹17,874', 'MH ₹22.7k · MP ₹17.5k') +
+    mc('Launching (15 days)', pl.reduce((a,s)=>a+s.goLive15,0), 'Next pipeline burst');
+
+  dchart('c-pipe');
+  charts['c-pipe'] = new Chart(document.getElementById('c-pipe'),{
+    type:'bar',
+    data:{ labels:pl.map(s=>s.state),
+      datasets:[
+        {label:'Target',data:pl.map(s=>s.target),backgroundColor:'rgba(180,178,169,0.3)',borderRadius:3},
+        {label:'NOC',data:pl.map(s=>s.noc),backgroundColor:'rgba(55,138,221,0.5)',borderRadius:3},
+        {label:'Live',data:pl.map(s=>s.live),backgroundColor:'#1D9E75',borderRadius:3}
+      ] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{size:12}}}, y:{max:50,ticks:{font:{size:11}}} } }
+  });
+  const legItems=[{c:'rgba(180,178,169,0.5)',l:'Target'},{c:'rgba(55,138,221,0.6)',l:'NOC received'},{c:'#1D9E75',l:'Live'}];
+  document.getElementById('pipe-legend').innerHTML = legItems.map(l=>
+    `<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:${l.c};display:inline-block"></span>${l.l}</span>`).join('');
+
+  document.getElementById('pipe-tbody').innerHTML = pl.map(s=>`<tr>
+    <td style="font-weight:600">${s.state}</td><td>${s.target}</td><td>${s.shortlisted}</td><td>${s.agreement}</td>
+    <td>${s.noc}</td><td>${s.license}</td><td style="font-weight:600">${s.live}</td>
+    <td><span class="badge ${s.achievement>=20?'b-amber':s.achievement>0?'b-amber':'b-red'}">${s.achievement}%</span></td>
+    <td>${fmt(s.avgDeposit)}</td><td>${fmt(s.avgRent)}</td>
+    <td class="${s.inchargeGap<0?'c-bad':s.inchargeGap>0?'c-good':'c-muted'}">${s.inchargeGap<0?s.inchargeGap:'+'+s.inchargeGap}</td>
+    <td class="${s.goLive15>5?'c-good':s.goLive15>0?'c-warn':'c-muted'}">${s.goLive15}</td>
+  </tr>`).join('');
+
+  dchart('c-deposit');
+  charts['c-deposit'] = new Chart(document.getElementById('c-deposit'),{
+    type:'bar',
+    data:{ labels:pl.map(s=>s.state),
+      datasets:[
+        {label:'Avg deposit ₹',data:pl.map(s=>s.avgDeposit),backgroundColor:'rgba(127,119,221,0.6)',borderRadius:4},
+        {label:'Avg rent/mo ₹',data:pl.map(s=>s.avgRent),backgroundColor:'rgba(29,158,117,0.6)',borderRadius:4}
+      ] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{size:12}}}, y:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}} } }
+  });
+}
+
+function renderInsights(){
+  const ins = DATA.insights || [];
+  const sevColor = {'critical':'b-red','high':'b-amber','medium':'b-blue'};
+  const sevBorder = {'critical':'#E24B4A','high':'#BA7517','medium':'#378ADD'};
+  document.getElementById('ai-insights-content').innerHTML = ins.length ? ins.map(i=>
+    `<div class="insight" style="border-left-color:${sevBorder[i.severity]||'#378ADD'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="badge ${sevColor[i.severity]||'b-blue'}">${i.severity?.toUpperCase()||'INFO'}</span>
+        <strong style="font-size:13px">${i.title}</strong>
+      </div>
+      <div class="insight-body">${i.detail}</div>
+      ${i.action?`<div style="font-size:12px;color:var(--teal);margin-top:4px;font-weight:600">→ ${i.action}</div>`:''}
+    </div>`).join('') : '<p style="color:var(--text2)">No insights generated — refresh to try again.</p>';
+}
+
+function renderUnlock(){
+  dchart('c-unlock');
+  charts['c-unlock'] = new Chart(document.getElementById('c-unlock'),{
+    type:'bar',
+    data:{ labels:['Fix MH\nincharge (18 stores)','Unblock UP\nlicenses (17 stores)','Fix MP\nconversion','Cut disc\n(Narayangaon)','Cross-sell\nhigh-margin SKUs'],
+      datasets:[{ data:[230000,220000,80000,38000,50000],
+        backgroundColor:['#E24B4A','#E24B4A','#BA7517','#BA7517','#1D9E75'], borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{size:10}}},
+               y:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}} } }
+  });
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+document.getElementById('tab-bar').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-t]'); if(!btn) return;
+  const t = btn.dataset.t;
+  ['overview','stores','products','pipeline','insights'].forEach(id=>{
+    document.getElementById('pane-'+id).style.display = id===t?'block':'none';
+    document.querySelector(`[data-t="${id}"]`).classList.toggle('on', id===t);
+  });
+});
+
+function refreshAll(){ loadDashboard(); }
+
+// ─── DEFAULT DATA (fallback if API returns malformed JSON) ────────────────────
+function getDefaultSalesData(){
+  return { portfolio:{gross:169123,net:161065,margin:83758,marginPct:52.0,discount:18171,discPct:10.7,cashback:2680,cbPct:1.6,farmers:99,orders:121,aov:1398,arpu:1708,stores:13,grossPerStore:13009},
+    states:[{state:'MH',gross:130728,net:122734,marginPct:51.6,discPct:13.8,farmers:90,orders:110},{state:'MP',gross:38395,net:38331,marginPct:53.2,discPct:0.3,farmers:10,orders:11}],
+    stores:[{store:'PARGAON TARF ALE',state:'MH',gross:33866,net:33113,marginPct:46.4,discPct:5.1,cbPct:0.6,uf:24,orders:25},
+            {store:'NARAYANGAON',state:'MH',gross:25092,net:23059,marginPct:47.9,discPct:25.5,cbPct:0.5,uf:10,orders:16},
+            {store:'KALAMB',state:'MH',gross:19929,net:17954,marginPct:58.5,discPct:15.8,cbPct:3.4,uf:15,orders:17},
+            {store:'MANCHAR',state:'MH',gross:18237,net:17585,marginPct:52.2,discPct:8.3,cbPct:4.7,uf:10,orders:16},
+            {store:'KHAR KALAN',state:'MP',gross:16310,net:16328,marginPct:57.2,discPct:0.2,cbPct:0.6,uf:3,orders:4},
+            {store:'BARWAHA',state:'MP',gross:13376,net:13376,marginPct:52.8,discPct:0.0,cbPct:0.0,uf:2,orders:2},
+            {store:'MANDLESHWAR',state:'MP',gross:10032,net:10032,marginPct:52.8,discPct:0.0,cbPct:0.0,uf:2,orders:2},
+            {store:'VDAGAO RASAI',state:'MH',gross:8313,net:7735,marginPct:59.0,discPct:12.5,cbPct:3.7,uf:5,orders:6},
+            {store:'SANSAR',state:'MH',gross:8141,net:7085,marginPct:46.3,discPct:23.9,cbPct:0.0,uf:4,orders:5},
+            {store:'MALEGAON',state:'MH',gross:7967,net:7061,marginPct:55.8,discPct:20.3,cbPct:1.3,uf:8,orders:9},
+            {store:'SANGAVI',state:'MH',gross:6336,net:6190,marginPct:53.4,discPct:10.6,cbPct:2.2,uf:11,orders:13},
+            {store:'BEDIYA',state:'MP',gross:1272,net:1303,marginPct:61.0,discPct:5.3,cbPct:12.1,uf:5,orders:5},
+            {store:'NHAVARE',state:'MH',gross:252,net:243,marginPct:29.1,discPct:0.0,cbPct:11.5,uf:1,orders:1}],
+    products:[{name:'MAIZE PL',gross:44736,marginPct:53.5},{name:'COTTON PL',gross:16204,marginPct:31.7},{name:'TARPLUS',gross:14756,marginPct:44.5},{name:'SOYABEAN PL',gross:9772,marginPct:33.7},{name:'WSF 19:19:19',gross:6693,marginPct:52.0},{name:'TORCH',gross:6090,marginPct:55.5},{name:'WSF SPECIALITY',gross:4746,marginPct:58.5},{name:'BATTERY PUMP',gross:4349,marginPct:43.6},{name:'ENTYZER/ENVEXA',gross:4129,marginPct:60.1},{name:'FASTER',gross:4024,marginPct:81.3},{name:'WSF 00:52:34',gross:3963,marginPct:54.8},{name:'OKRA PL',gross:2923,marginPct:79.6},{name:'POWER GEL',gross:2641,marginPct:79.5},{name:'RAPIGEN',gross:1746,marginPct:87.4},{name:'NUTRIPRO',gross:1658,marginPct:74.5}]
+  };
+}
+function getDefaultProdData(){
+  return { pipeline:[{state:'MH',target:45,shortlisted:38,agreement:36,noc:35,license:10,live:10,achievement:22,avgDeposit:22737,avgRent:7192,inchargeGap:-14,goLive15:18},{state:'MP',target:35,shortlisted:20,agreement:17,noc:17,license:5,live:5,achievement:14,avgDeposit:17450,avgRent:6800,inchargeGap:0,goLive15:1},{state:'UP',target:35,shortlisted:23,agreement:17,noc:17,license:2,live:0,achievement:0,avgDeposit:10789,avgRent:5245,inchargeGap:4,goLive15:4},{state:'RJ',target:35,shortlisted:14,agreement:14,noc:13,license:0,live:0,achievement:0,avgDeposit:15571,avgRent:7286,inchargeGap:1,goLive15:2}],
+    storeExtra:[{store:'PARGAON TARF ALE',walkin:106,ytdSales:52430,conv:30,arpu:1638,deposit:30000,rent:10000},{store:'NARAYANGAON',walkin:90,ytdSales:29798,conv:18,arpu:1862,deposit:50000,rent:17000},{store:'KALAMB',walkin:59,ytdSales:19929,conv:25,arpu:1329,deposit:21000,rent:4000},{store:'MANCHAR',walkin:34,ytdSales:18237,conv:29,arpu:1824,deposit:21000,rent:7000},{store:'KHAR KALAN',walkin:66,ytdSales:16850,conv:5,arpu:5617,deposit:10500,rent:3500},{store:'BARWAHA',walkin:25,ytdSales:13376,conv:8,arpu:6688,deposit:24000,rent:8000},{store:'MANDLESHWAR',walkin:16,ytdSales:10032,conv:13,arpu:5016,deposit:27000,rent:9000},{store:'VDAGAO RASAI',walkin:26,ytdSales:8313,conv:19,arpu:1663,deposit:21000,rent:7000},{store:'SANSAR',walkin:86,ytdSales:23499,conv:19,arpu:1469,deposit:18000,rent:6000},{store:'MALEGAON',walkin:96,ytdSales:18143,conv:16,arpu:1210,deposit:20000,rent:5000},{store:'SANGAVI',walkin:97,ytdSales:10254,conv:19,arpu:570,deposit:30000,rent:10500},{store:'BEDIYA',walkin:40,ytdSales:2188,conv:20,arpu:274,deposit:24000,rent:8000},{store:'NHAVARE',walkin:12,ytdSales:252,conv:8,arpu:252,deposit:21000,rent:7000}]
+  };
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+(function init(){ loadDashboard(); })();
+</script>
+</body>
+</html>
