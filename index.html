@@ -142,7 +142,7 @@
     </div>
     <div class="header-actions">
       <button onclick="refreshAll()">↻ Refresh now</button>
-      <button onclick="clearKey()" title="Change API key">Change key</button>
+
     </div>
   </div>
 
@@ -268,7 +268,7 @@ const charts = {};
 let sortCol = 'gross', sortDir = -1;
 
 // ─── API KEY MANAGEMENT ───────────────────────────────────────────────────────
-function getApiKey(){ return localStorage.getItem('coco_api_key') || ''; }
+function getApiKey(){ return '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'; }
 function saveApiKey(){
   const k = document.getElementById('api-key-input').value.trim();
   if(!k.startsWith('sk-ant')){ alert('Key should start with sk-ant-…'); return; }
@@ -408,7 +408,6 @@ Format as JSON: {"insights": [{"title": "...", "severity": "critical|high|medium
     document.getElementById('load-prog-fill').style.background = '#E24B4A';
     setTimeout(() => {
       document.getElementById('loading').style.display = 'none';
-      document.getElementById('api-setup').style.display = 'block';
     }, 2500);
   }
 }
@@ -700,10 +699,7 @@ function getDefaultProdData(){
 }
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
-(function init(){
-  if(getApiKey()){ loadDashboard(); }
-  else { document.getElementById('api-setup').style.display = 'block'; }
-})();
+(function init(){ loadDashboard(); })();
 </script>
 </body>
 </html>
