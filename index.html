@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoCo Live Dashboard · AgroStar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#fff;--bg2:#f7f6f3;--bg3:#f1f0ec;--text:#1a1a1a;--text2:#6b6a64;--text3:#9b9a94;--border:rgba(0,0,0,0.1);--blue:#378ADD;--teal:#1D9E75;--amber:#BA7517;--red:#E24B4A;--purple:#7F77DD;--r:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0ede8;--text2:#a09e96;--text3:#6b6a62;--border:rgba(255,255,255,0.1)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;min-height:100vh}
+#wrap{max-width:1200px;margin:0 auto;padding:1.5rem 1rem}
+.hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)}
+.hdr h1{font-size:18px;font-weight:600}
+.hdr p{font-size:12px;color:var(--text3);margin-top:2px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+button{font-family:inherit;font-size:12px;padding:6px 14px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer}
+button:hover{background:var(--bg2)}
+button.on{background:#E6F1FB;color:#0C447C;border-color:#378ADD}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+.mc{background:var(--bg2);border-radius:var(--r);padding:14px 16px}
+.ml{font-size:11px;color:var(--text2);margin-bottom:4px}
+.mv{font-size:20px;font-weight:600;color:var(--text)}
+.ms{font-size:11px;color:var(--text3);margin-top:2px}
+.sec{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+.cw{position:relative}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:7px 8px;text-align:left;border-bottom:0.5px solid var(--border);color:var(--text2);font-weight:600;font-size:11px;white-space:nowrap;cursor:pointer}
+th:hover{color:var(--text)}
+td{padding:6px 8px;border-bottom:0.5px solid var(--border);color:var(--text);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+.bg{background:#E1F5EE;color:#085041}
+.ba{background:#FAEEDA;color:#633806}
+.br{background:#FCEBEB;color:#791F1F}
+.bb{background:#E6F1FB;color:#0C447C}
+.bp{background:#EEEDFE;color:#3C3489}
+.cg{color:var(--teal);font-weight:600}
+.cw2{color:var(--amber);font-weight:600}
+.cr{color:var(--red);font-weight:600}
+.cm{color:var(--text2)}
+.pbar{background:var(--bg3);border-radius:3px;height:5px;margin-top:3px;overflow:hidden}
+.pfill{height:5px;border-radius:3px}
+.ins{border-left:3px solid var(--blue);padding:8px 12px;margin-bottom:8px;background:var(--bg2);border-radius:0 var(--r) var(--r) 0}
+.itag{font-size:11px;color:#0C447C;font-weight:700;margin-bottom:2px;text-transform:uppercase}
+.ibody{font-size:12px;line-height:1.55}
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lmsg{font-size:13px;color:var(--text2)}
+.lpbar{width:240px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.lpfill{width:0;height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+</style>
+</head>
+<body>
+<div id="wrap">
+
+<div id="loading">
+  <div class="spin"></div>
+  <div class="lmsg" id="lmsg">Loading dashboard…</div>
+  <div class="lpbar"><div class="lpfill" id="lpfill"></div></div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div><h1>CoCo live dashboard · AgroStar</h1><p><span class="dot"></span>Q1 FY27 · Apr–Jun 2026 · <span id="rtime">Loading…</span></p></div>
+    <button onclick="location.reload()">↻ Refresh</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="on" data-t="overview">Overview</button>
+    <button data-t="stores">Store health</button>
+    <button data-t="products">Products</button>
+    <button data-t="pipeline">Pipeline</button>
+    <button data-t="insights">AI insights</button>
+  </div>
+
+  <div id="pane-overview">
+    <div class="grid" id="k1"></div>
+    <div class="grid" id="k2"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="card"><p class="sec">Gross sale by store</p><div class="cw" style="height:320px"><canvas id="c1" role="img" aria-label="Store sales">Store sales</canvas></div></div>
+      <div class="card"><p class="sec">State split</p><div class="cw" style="height:180px"><canvas id="c2" role="img" aria-label="State split">State split</canvas></div><div id="sleg" style="margin-top:12px"></div></div>
+    </div>
+  </div>
+
+  <div id="pane-stores" style="display:none">
+    <div class="grid" id="sk"></div>
+    <div class="card"><p class="sec">Store scorecard — click headers to sort</p>
+      <div style="overflow-x:auto"><table id="stbl">
+        <thead><tr>
+          <th data-c="n">Store</th><th data-c="st">St</th><th data-c="dep">Deposit</th><th data-c="rent">Rent/mo</th>
+          <th data-c="walkin">Walk-ins</th><th data-c="uf">Uniq farmers</th><th data-c="ord">Orders</th>
+          <th data-c="rep">Repeat</th><th data-c="conv">Conv%</th><th data-c="gross">Gross</th>
+          <th data-c="arpu">ARPU</th><th data-c="margin">Margin%</th><th data-c="disc">Disc%</th><th data-c="roi">Rev/dep</th><th>Health</th>
+        </tr></thead>
+        <tbody id="stbody"></tbody>
+      </table></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card"><p class="sec">Repeat ratio vs unique farmers</p><div class="cw" style="height:240px"><canvas id="c3" role="img" aria-label="Repeat scatter">Scatter</canvas></div></div>
+      <div class="card"><p class="sec">Unique transacting farmers per store</p><div class="cw" style="height:240px"><canvas id="c4" role="img" aria-label="Farmers">Farmers</canvas></div></div>
+    </div>
+  </div>
+
+  <div id="pane-products" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="card"><p class="sec">Top products — gross sale</p><div class="cw" style="height:380px"><canvas id="c5" role="img" aria-label="Products">Products</canvas></div></div>
+      <div class="card"><p class="sec">Margin % by product</p><div id="pml"></div></div>
+    </div>
+    <div class="card"><p class="sec">Discount + cashback leakage by store</p><div class="cw" style="height:200px"><canvas id="c6" role="img" aria-label="Leakage">Leakage</canvas></div></div>
+  </div>
+
+  <div id="pane-pipeline" style="display:none">
+    <div class="grid" id="pk"></div>
+    <div class="card"><p class="sec">Expansion pipeline — target vs NOC vs live</p><div class="cw" style="height:220px"><canvas id="c7" role="img" aria-label="Pipeline">Pipeline</canvas></div></div>
+    <div class="card"><p class="sec">State scorecard</p><div style="overflow-x:auto"><table><thead><tr><th>State</th><th>Target</th><th>Shortlisted</th><th>Agreement</th><th>NOC</th><th>License</th><th>Live</th><th>Achievement</th><th>Avg deposit</th><th>Avg rent</th><th>Incharge gap</th><th>Go live 15d</th></tr></thead><tbody id="ptbody"></tbody></table></div></div>
+    <div class="card"><p class="sec">Average deposit vs rent by state</p><div class="cw" style="height:200px"><canvas id="c8" role="img" aria-label="Deposits">Deposits</canvas></div></div>
+  </div>
+
+  <div id="pane-insights" style="display:none">
+    <div class="card"><p class="sec">Key insights & recommendations</p><div id="insbox"></div></div>
+    <div class="card"><p class="sec">30-day revenue unlock potential</p><div class="cw" style="height:200px"><canvas id="c9" role="img" aria-label="Unlock">Unlock</canvas></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+const ch={};
+function dc(id){if(ch[id]){ch[id].destroy();delete ch[id];}}
+const f=n=>'₹'+Number(n).toLocaleString('en-IN');
+const p=n=>Number(n).toFixed(1)+'%';
+function mc(l,v,s=''){return `<div class="mc"><div class="ml">${l}</div><div class="mv">${v}</div>${s?`<div class="ms">${s}</div>`:''}</div>`;}
+
+const STORES=[
+  {n:'Pargaon Tarf Ale',st:'MH',dep:30000,rent:10000,walkin:106,uf:24,ord:25,conv:30,gross:33866,arpu:1638,margin:46.4,disc:5.1,cb:0.6},
+  {n:'Narayangaon',st:'MH',dep:50000,rent:17000,walkin:90,uf:10,ord:16,conv:18,gross:25092,arpu:1862,margin:47.9,disc:25.5,cb:0.5},
+  {n:'Kalamb',st:'MH',dep:21000,rent:4000,walkin:59,uf:15,ord:17,conv:25,gross:19929,arpu:1329,margin:58.5,disc:15.8,cb:3.4},
+  {n:'Manchar',st:'MH',dep:21000,rent:7000,walkin:34,uf:10,ord:16,conv:29,gross:18237,arpu:1824,margin:52.2,disc:8.3,cb:4.7},
+  {n:'Khar Kalan',st:'MP',dep:10500,rent:3500,walkin:66,uf:3,ord:4,conv:5,gross:16310,arpu:5617,margin:57.2,disc:0.2,cb:0.6},
+  {n:'Barwaha',st:'MP',dep:24000,rent:8000,walkin:25,uf:2,ord:2,conv:8,gross:13376,arpu:6688,margin:52.8,disc:0,cb:0},
+  {n:'Mandleshwar',st:'MP',dep:27000,rent:9000,walkin:16,uf:2,ord:2,conv:13,gross:10032,arpu:5016,margin:52.8,disc:0,cb:0},
+  {n:'Vdagao Rasai',st:'MH',dep:21000,rent:7000,walkin:26,uf:5,ord:6,conv:19,gross:8313,arpu:1663,margin:59.0,disc:12.5,cb:3.7},
+  {n:'Sansar',st:'MH',dep:18000,rent:6000,walkin:86,uf:4,ord:5,conv:19,gross:8141,arpu:1469,margin:46.3,disc:23.9,cb:0},
+  {n:'Malegaon',st:'MH',dep:20000,rent:5000,walkin:96,uf:8,ord:9,conv:16,gross:7967,arpu:1210,margin:55.8,disc:20.3,cb:1.3},
+  {n:'Sangavi',st:'MH',dep:30000,rent:10500,walkin:97,uf:11,ord:13,conv:19,gross:6336,arpu:570,margin:53.4,disc:10.6,cb:2.2},
+  {n:'Bediya',st:'MP',dep:24000,rent:8000,walkin:40,uf:5,ord:5,conv:20,gross:1272,arpu:274,margin:61.0,disc:5.3,cb:12.1},
+  {n:'Nhavare',st:'MH',dep:21000,rent:7000,walkin:12,uf:1,ord:1,conv:8,gross:252,arpu:252,margin:29.1,disc:0,cb:11.5},
+  {n:'Khalwa',st:'MP',dep:15000,rent:5000,walkin:91,uf:0,ord:0,conv:2,gross:0,arpu:0,margin:0,disc:0,cb:0},
+  {n:'Pabal',st:'MH',dep:25000,rent:9000,walkin:11,uf:0,ord:0,conv:0,gross:0,arpu:0,margin:0,disc:0,cb:0},
+];
+STORES.forEach(s=>{s.rep=s.uf>0?+(s.ord/s.uf).toFixed(2):0;s.roi=s.dep>0?+(s.gross/s.dep).toFixed(2):0;});
+
+const PRODUCTS=[
+  {n:'Maize PL',g:44736,m:53.5},{n:'Cotton PL',g:16204,m:31.7},{n:'Tarplus',g:14756,m:44.5},
+  {n:'Soyabean PL',g:9772,m:33.7},{n:'WSF 19:19:19',g:6693,m:52.0},{n:'Torch',g:6090,m:55.5},
+  {n:'WSF Speciality',g:4746,m:58.5},{n:'Battery Pump',g:4349,m:43.6},{n:'Entyzer',g:4129,m:60.1},
+  {n:'Faster',g:4024,m:81.3},{n:'WSF 00:52:34',g:3963,m:54.8},{n:'Okra PL',g:2923,m:79.6},
+  {n:'Power Gel',g:2641,m:79.5},{n:'Rapigen',g:1746,m:87.4},{n:'Nutripro',g:1658,m:74.5},
+];
+
+const PIPELINE=[
+  {s:'MH',target:45,sel:38,agr:36,noc:35,lic:10,live:10,ach:22,dep:22737,rent:7192,gap:-14,go:18},
+  {s:'MP',target:35,sel:20,agr:17,noc:17,lic:5,live:5,ach:14,dep:17450,rent:6800,gap:0,go:1},
+  {s:'UP',target:35,sel:23,agr:17,noc:17,lic:2,live:0,ach:0,dep:10789,rent:5245,gap:4,go:4},
+  {s:'RJ',target:35,sel:14,agr:14,noc:13,lic:0,live:0,ach:0,dep:15571,rent:7286,gap:1,go:2},
+];
+
+const INSIGHTS=[
+  {title:'Fix MH store incharge gap — #1 blocker',sev:'critical',detail:'18 MH stores are ready to go live but blocked by a shortage of 14 store incharges. At ₹13k avg gross/store/month, resolving this unlocks ₹2.3L/month immediately.',action:'Hire or reassign 14 store incharges in MH within 7 days'},
+  {title:'Narayangaon discount at 25.5% — highest in portfolio',sev:'critical',detail:'₹6,393 discounted on ₹25,092 gross. Reducing to 10% would recover ₹3,800 per cycle. Store has strong footfall of 90 walk-ins YTD.',action:'Cap discount at 10% for Narayangaon effective immediately'},
+  {title:'MP conversion only 7% vs MH 21%',sev:'high',detail:'Khar Kalan: 66 walk-ins, 5% conversion. Khalwa: 91 walk-ins, 2% conversion. Both have high ARPU (₹5–7k) showing farmers who do buy, spend big.',action:'Deploy farmer advisory sessions and bundled product demos at MP stores'},
+  {title:'UP and RJ have zero revenue — 30 stores ready',sev:'high',detail:'UP has 17 NOC-cleared stores and RJ has 13. Both at zero revenue due to licensing delays. Potential ₹4L+/month if unblocked.',action:'Escalate UP and RJ licensing to state departments this week'},
+  {title:'Cross-sell high-margin SKUs to every transaction',sev:'medium',detail:'Rapigen (87%), Power Gel (80%), Faster (81%) have excellent margins but are sold to only 4–5 farmers each. Every seed purchase is a cross-sell opportunity.',action:'Add high-margin SKU attach to every seed transaction at counter'},
+];
+
+let sortCol='gross', sortDir=-1;
+
+function health(s){
+  if(!s.gross) return '<span class="badge br">No sales</span>';
+  if(s.margin>=57&&s.disc<10&&s.conv>=20&&s.rep>=1.2) return '<span class="badge bg">Star</span>';
+  if(s.disc>20) return '<span class="badge br">High disc</span>';
+  if(s.conv<8&&s.walkin>20) return '<span class="badge br">Low conv</span>';
+  if(s.rep>=1.5) return '<span class="badge bb">Loyal</span>';
+  if(s.margin>=55&&s.disc<15) return '<span class="badge bg">Strong</span>';
+  return '<span class="badge ba">Watch</span>';
+}
+
+function renderOverview(){
+  document.getElementById('k1').innerHTML=
+    mc('Gross sale',f(169123))+mc('Net sale',f(161065))+mc('Margin',f(83758),'52.0% of net')+mc('Discount',f(18171),'10.7% of gross')+mc('Cashback',f(2680),'1.6% of gross');
+  document.getElementById('k2').innerHTML=
+    mc('Unique farmers',99)+mc('Unique orders',121)+mc('AOV / order',f(1398))+mc('ARPU / farmer',f(1708))+mc('Active stores',13)+mc('Gross / store',f(13009));
+  const ss=[...STORES].filter(s=>s.gross>0).sort((a,b)=>b.gross-a.gross);
+  dc('c1');ch['c1']=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:ss.map(s=>s.n),datasets:[{data:ss.map(s=>s.gross),backgroundColor:ss.map(s=>s.margin>=57?'#1D9E75':s.disc>20?'#BA7517':'#378ADD'),borderRadius:3,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}},y:{ticks:{font:{size:11}}}}}});
+  dc('c2');ch['c2']=new Chart(document.getElementById('c2'),{type:'doughnut',data:{labels:['MH','MP'],datasets:[{data:[130728,38395],backgroundColor:['#378ADD','#1D9E75'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  document.getElementById('sleg').innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block"></span><strong>MH</strong> <span style="color:var(--text2)">'+f(130728)+'</span> <span class="badge bb">51.6% margin</span></div><div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block"></span><strong>MP</strong> <span style="color:var(--text2)">'+f(38395)+'</span> <span class="badge bg">53.2% margin</span></div>';
+}
+
+function renderStores(){
+  document.getElementById('sk').innerHTML=mc('MH walk-ins','617','10 stores')+mc('MH conversion','21%','128 transacting')+mc('MP walk-ins','238','5 stores')+mc('MP conversion','7%','17 transacting')+mc('Best repeat','1.60×','Vdagao Rasai')+mc('Avg deposit',f(17874),'Portfolio avg');
+  const data=[...STORES].sort((a,b)=>{const av=a[sortCol],bv=b[sortCol];return typeof av==='number'?sortDir*(av-bv):sortDir*String(av).localeCompare(String(bv));});
+  document.getElementById('stbody').innerHTML=data.map(s=>`<tr>
+    <td><strong>${s.n}</strong></td><td class="cm">${s.st}</td><td>${f(s.dep)}</td><td>${f(s.rent)}</td>
+    <td>${s.walkin||'—'}</td><td><strong>${s.uf}</strong></td><td>${s.ord}</td>
+    <td class="${s.rep>=1.5?'cg':s.rep>=1.2?'':s.rep>0?'cw2':'cr'}">${s.rep>0?s.rep.toFixed(2)+'×':'—'}</td>
+    <td class="${s.conv>=25?'cg':s.conv>=15?'cw2':s.conv>0?'cr':'cr'}">${p(s.conv)}</td>
+    <td>${s.gross?f(s.gross):'—'}</td><td>${s.arpu?f(s.arpu):'—'}</td>
+    <td>${s.margin?p(s.margin):'—'}</td>
+    <td class="${s.disc>20?'cr':s.disc>12?'cw2':''}">${p(s.disc)}</td>
+    <td class="${s.roi>=0.5?'cg':s.roi>=0.2?'cw2':'cr'}">${s.roi>0?s.roi.toFixed(2)+'×':'—'}</td>
+    <td>${health(s)}</td>
+  </tr>`).join('');
+  document.getElementById('stbl').querySelectorAll('th[data-c]').forEach(th=>{
+    th.onclick=()=>{sortCol===th.dataset.c?sortDir*=-1:(sortCol=th.dataset.c,sortDir=-1);renderStores();};
+  });
+  const d=STORES.filter(s=>s.uf>0);
+  dc('c3');ch['c3']=new Chart(document.getElementById('c3'),{type:'bubble',data:{datasets:[{data:d.map(s=>({x:s.uf,y:s.rep,r:Math.max(5,Math.sqrt(s.gross/180)),name:s.n})),backgroundColor:d.map(s=>s.st==='MH'?'rgba(55,138,221,0.55)':'rgba(29,158,117,0.55)'),borderColor:d.map(s=>s.st==='MH'?'#185FA5':'#0F6E56'),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.name}: ${c.raw.x} farmers, ${c.raw.y.toFixed(2)}× repeat`}}},scales:{x:{title:{display:true,text:'Unique farmers',font:{size:10}},min:0,max:28,ticks:{font:{size:10}}},y:{title:{display:true,text:'Repeat ratio',font:{size:10}},min:0.8,max:2.0,ticks:{callback:v=>v.toFixed(1)+'×',font:{size:10}}}},layout:{padding:10}}});
+  const fs=[...STORES].filter(s=>s.walkin>0).sort((a,b)=>b.uf-a.uf);
+  dc('c4');ch['c4']=new Chart(document.getElementById('c4'),{type:'bar',data:{labels:fs.map(s=>s.n),datasets:[{label:'Unique farmers',data:fs.map(s=>s.uf),backgroundColor:'#7F77DD',borderRadius:3,barThickness:14},{label:'Walk-ins',data:fs.map(s=>s.walkin),backgroundColor:'rgba(127,119,221,0.2)',borderRadius:3,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:10}}}}}});
+}
+
+function renderProducts(){
+  const ps=[...PRODUCTS].sort((a,b)=>b.g-a.g).slice(0,12);
+  dc('c5');ch['c5']=new Chart(document.getElementById('c5'),{type:'bar',data:{labels:ps.map(p=>p.n),datasets:[{data:ps.map(p=>p.g),backgroundColor:'#7F77DD',borderRadius:3,barThickness:20}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}},y:{ticks:{font:{size:11}}}}}});
+  const bm=[...PRODUCTS].sort((a,b)=>b.m-a.m).slice(0,12);
+  const mx=Math.max(...bm.map(p=>p.m));
+  document.getElementById('pml').innerHTML=bm.map(pr=>{const c=pr.m>=75?'#1D9E75':pr.m>=55?'#378ADD':'#BA7517';return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px"><span>${pr.n}</span><span style="color:var(--text2);font-weight:600">${p(pr.m)}</span></div><div class="pbar"><div class="pfill" style="width:${Math.round(pr.m/mx*100)}%;background:${c}"></div></div></div>`;}).join('');
+  const ls=STORES.filter(s=>s.gross>0);
+  dc('c6');ch['c6']=new Chart(document.getElementById('c6'),{type:'bar',data:{labels:ls.map(s=>s.n),datasets:[{label:'Disc%',data:ls.map(s=>s.disc),backgroundColor:'#E24B4A',borderRadius:3},{label:'CB%',data:ls.map(s=>s.cb),backgroundColor:'#BA7517',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}},y:{ticks:{callback:v=>v+'%',font:{size:10}}}}}});
+}
+
+function renderPipeline(){
+  const tl=PIPELINE.reduce((a,s)=>a+s.live,0),tt=PIPELINE.reduce((a,s)=>a+s.target,0);
+  document.getElementById('pk').innerHTML=mc('Total target',tt)+mc('Live stores',tl,Math.round(tl/tt*100)+'% achieved')+mc('Deposit committed','₹15.2L','84 agreements')+mc('Avg deposit',f(17874),'Portfolio avg')+mc('Launching 15d',PIPELINE.reduce((a,s)=>a+s.go,0));
+  dc('c7');ch['c7']=new Chart(document.getElementById('c7'),{type:'bar',data:{labels:PIPELINE.map(s=>s.s),datasets:[{label:'Target',data:PIPELINE.map(s=>s.target),backgroundColor:'rgba(180,178,169,0.3)',borderRadius:3},{label:'NOC',data:PIPELINE.map(s=>s.noc),backgroundColor:'rgba(55,138,221,0.5)',borderRadius:3},{label:'Live',data:PIPELINE.map(s=>s.live),backgroundColor:'#1D9E75',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:12}}},y:{max:50,ticks:{font:{size:11}}}}}});
+  document.getElementById('ptbody').innerHTML=PIPELINE.map(s=>`<tr>
+    <td><strong>${s.s}</strong></td><td>${s.target}</td><td>${s.sel}</td><td>${s.agr}</td><td>${s.noc}</td><td>${s.lic}</td><td><strong>${s.live}</strong></td>
+    <td><span class="badge ${s.ach>=20?'ba':s.ach>0?'ba':'br'}">${s.ach}%</span></td>
+    <td>${f(s.dep)}</td><td>${f(s.rent)}</td>
+    <td class="${s.gap<0?'cr':s.gap>0?'cg':'cm'}">${s.gap<0?s.gap:'+'+s.gap}</td>
+    <td class="${s.go>5?'cg':s.go>0?'cw2':'cm'}">${s.go}</td>
+  </tr>`).join('');
+  dc('c8');ch['c8']=new Chart(document.getElementById('c8'),{type:'bar',data:{labels:PIPELINE.map(s=>s.s),datasets:[{label:'Avg deposit',data:PIPELINE.map(s=>s.dep),backgroundColor:'rgba(127,119,221,0.6)',borderRadius:4},{label:'Avg rent/mo',data:PIPELINE.map(s=>s.rent),backgroundColor:'rgba(29,158,117,0.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:12}}},y:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}}}}});
+}
+
+function renderInsights(){
+  const sc={critical:'#E24B4A',high:'#BA7517',medium:'#378ADD'};
+  const bc={critical:'br',high:'ba',medium:'bb'};
+  document.getElementById('insbox').innerHTML=INSIGHTS.map(i=>`<div class="ins" style="border-left-color:${sc[i.sev]||'#378ADD'}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="badge ${bc[i.sev]||'bb'}">${i.sev.toUpperCase()}</span><strong style="font-size:13px">${i.title}</strong></div><div class="ibody">${i.detail}</div><div style="font-size:12px;color:var(--teal);margin-top:4px;font-weight:600">→ ${i.action}</div></div>`).join('');
+  dc('c9');ch['c9']=new Chart(document.getElementById('c9'),{type:'bar',data:{labels:['Fix MH\nincharge','Unblock UP\nlicenses','Fix MP\nconversion','Cut Narayangaon\ndisc','Cross-sell\nhigh-margin'],datasets:[{data:[230000,220000,80000,38000,50000],backgroundColor:['#E24B4A','#E24B4A','#BA7517','#BA7517','#1D9E75'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>'₹'+Math.round(v/1000)+'k',font:{size:10}}}}}});
+}
+
+const PANES=['overview','stores','products','pipeline','insights'];
+const RENDERS={overview:renderOverview,stores:renderStores,products:renderProducts,pipeline:renderPipeline,insights:renderInsights};
+const rendered={};
+
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('[data-t]');if(!b)return;
+  const t=b.dataset.t;
+  PANES.forEach(id=>{document.getElementById('pane-'+id).style.display=id===t?'block':'none';document.querySelector('[data-t="'+id+'"]').classList.toggle('on',id===t);});
+  if(!rendered[t]){rendered[t]=true;RENDERS[t]();}
+});
+
+async function init(){
+  const lp=document.getElementById('lpfill');
+  const lm=document.getElementById('lmsg');
+  lm.textContent='Loading sales data…';lp.style.width='30%';
+  await new Promise(r=>setTimeout(r,300));
+  lm.textContent='Loading store data…';lp.style.width='60%';
+  await new Promise(r=>setTimeout(r,300));
+  lm.textContent='Building charts…';lp.style.width='90%';
+  await new Promise(r=>setTimeout(r,200));
+  lp.style.width='100%';
+  await new Promise(r=>setTimeout(r,150));
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('rtime').textContent='Last loaded '+new Date().toLocaleTimeString();
+  renderOverview();
+  rendered['overview']=true;
+}
+
+init();
+</script>
+</body>
+</html>
